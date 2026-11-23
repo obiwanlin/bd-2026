@@ -113,6 +113,7 @@ main.center{justify-content:center}
     <div class="hearts" id="hearts"></div>
     <div class="area" id="area"></div>
     <div class="buffs" id="buffs"></div>
+    <button class="gbtn" id="mbtn" aria-label="音樂開關" style="width:auto;padding:0 6px;font-size:12px;color:#fff;font-family:FP"></button>
     <button class="gbtn" id="gbtn" aria-label="嚮導選單"><img src="assets/guideicon.png" alt=""></button>
   </header>
   <div id="bossw"></div>
@@ -339,7 +340,7 @@ function render(){timers.forEach(clearInterval);timers=[];closeRadio(true);close
  $('#buffs').innerHTML=S.honey&&idx(S.step)<idx('wof')?I('honey',24):'';
  $('#bossw').innerHTML=sc.boss?`<div class="boss">${I(sc.boss[0],30)}<div class="bar"><i style="width:${sc.boss[2]}%"></i><span>${sc.boss[1]}</span></div></div>`:'';
  const m=$('#main');m.className=sc.center?'center':'';m.innerHTML=sc.html;m.scrollTop=0;
- renderTools();sc.mount&&sc.mount();}
+ renderTools();sc.mount&&sc.mount();if(typeof bgmFor==='function')bgmFor(S.step);}
 function renderTools(){const r=reached('bocdead'),mi=reached('chest'),glow=S.step==='hard';
  $('#toolbar').innerHTML=`<button class="tool" data-a="compass">${I('compass',30)}<span>羅盤</span></button><button class="tool ${r?'':'off'}" data-a="radio">${I('radio',30)}<span>${r?'收音機':'？？？'}</span></button><button class="tool ${mi?'':'off'} ${glow?'glow':''}" data-a="mirror">${I('mirror',30)}<span>${mi?'魔鏡':'？？？'}</span></button>`}
 
@@ -373,7 +374,7 @@ function guideMenu(){const i=idx(S.step);
  <div class="grid3" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button class="btn dark" data-g="__back" ${i===0?'disabled':''}>退回上一步</button><button class="btn red" data-g="__next" ${i===STEPS.length-1?'disabled':''}>跳到下一步</button></div>
  <button class="btn dark wide" data-g="__reset" style="font-size:12px;min-height:36px">全部重來（測試用）</button>`,[{t:'關閉',cls:'dark'}]);
  $('#mbox').querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const g=b.dataset.g;
-  if(g==='circuit'){modal(`<div class="say gold">隱藏電路</div><div style="overflow:auto;max-height:60vh;background:#fff;border-radius:4px"><img src="assets/circuit.png" alt="血肉牆電路圖" style="width:200%;max-width:none;image-rendering:auto;display:block"></div><div class="small">可以左右上下拖曳看大圖。</div>`,[{t:'關閉',cls:'dark'}]);return}
+  if(g==='circuit'){modal(`<div class="row"><div class="say gold" style="flex:1">隱藏電路</div><button class="btn dark" id="zOut" style="min-height:40px;padding:0 14px">－</button><button class="btn dark" id="zIn" style="min-height:40px;padding:0 14px">＋</button></div><div id="zv" style="position:relative;overflow:hidden;background:#fff;border-radius:4px;touch-action:none;aspect-ratio:900/1061;max-height:62vh;margin:0 auto;width:100%"><img id="zimg" src="assets/circuit.png" alt="血肉牆電路圖" style="position:absolute;left:0;top:0;width:100%;transform-origin:0 0;image-rendering:auto;user-select:none;-webkit-user-drag:none" draggable="false"></div><div class="small">兩指捏合或點兩下放大，放大後可以用手指拖著看。</div>`,[{t:'關閉',cls:'dark'}]);zoomer();return}
   if(g==='__reset'){modal(say('真的要全部重來嗎？進度會清空。','c'),[{t:'全部重來',cls:'red',f:()=>{S=FRESH();truthSel=[null,null,null,null];save();render()}},{t:'取消',cls:'dark'}]);return}
   closeModal();
   if(g==='__back'){prepStep(STEPS[i-1]);go(STEPS[i-1]);return}
@@ -418,6 +419,33 @@ function openRadio(){$('#radio').classList.add('on');const cv=$('#spec'),cx=cv.g
   radioRAF=requestAnimationFrame(frame)};radioRAF=requestAnimationFrame(frame)}
 function closeRadio(silent){$('#radio').classList.remove('on');cancelAnimationFrame(radioRAF)}
 $('#radioClose').onclick=()=>closeRadio();
+
+/* ---------- zoom viewer ---------- */
+function zoomer(){const v=$('#zv'),im=$('#zimg');if(!v)return;const pw=v.parentElement.clientWidth,mh=window.innerHeight*.62;const w0=Math.min(pw,mh*900/1061);v.style.width=w0+'px';v.style.height=(w0*1061/900)+'px';v.style.aspectRatio='auto';v.style.maxHeight='none';let sc=1,tx=0,ty=0;const P=new Map();let last=null,lastTap=0;
+ const W=()=>v.clientWidth,H=()=>v.clientHeight;
+ const apply=()=>{sc=Math.max(1,Math.min(5,sc));const iw=W()*sc,ih=im.offsetHeight/ (im._s||1)*sc;tx=Math.min(0,Math.max(W()-iw,tx));ty=Math.min(0,Math.max(H()-W()*1061/900*sc,ty));im.style.transform=`translate(${tx}px,${ty}px) scale(${sc})`};
+ const zoomAt=(f,cx,cy)=>{const ns=Math.max(1,Math.min(5,sc*f));tx=cx-(cx-tx)*ns/sc;ty=cy-(cy-ty)*ns/sc;sc=ns;apply()};
+ const rel=e=>{const r=v.getBoundingClientRect();return [e.clientX-r.left,e.clientY-r.top]};
+ v.addEventListener('pointerdown',e=>{v.setPointerCapture(e.pointerId);P.set(e.pointerId,rel(e));if(P.size===1){const now=Date.now();if(now-lastTap<300){const [x,y]=rel(e);sc>1.2?(sc=1,tx=0,ty=0,apply()):zoomAt(2.5,x,y)}lastTap=now}last=null});
+ v.addEventListener('pointermove',e=>{if(!P.has(e.pointerId))return;const prev=P.get(e.pointerId);const cur=rel(e);P.set(e.pointerId,cur);
+  if(P.size===1){tx+=cur[0]-prev[0];ty+=cur[1]-prev[1];apply()}
+  else if(P.size===2){const [a,b]=[...P.values()];const d=Math.hypot(a[0]-b[0],a[1]-b[1]);const mx=(a[0]+b[0])/2,my=(a[1]+b[1])/2;if(last){zoomAt(d/last.d,mx,my);tx+=mx-last.mx;ty+=my-last.my;apply()}last={d,mx,my}}});
+ const up=e=>{P.delete(e.pointerId);last=null};v.addEventListener('pointerup',up);v.addEventListener('pointercancel',up);
+ v.addEventListener('wheel',e=>{e.preventDefault();const [x,y]=rel(e);zoomAt(e.deltaY<0?1.15:1/1.15,x,y)},{passive:false});
+ $('#zIn').onclick=()=>zoomAt(1.5,W()/2,H()/2);$('#zOut').onclick=()=>zoomAt(1/1.5,W()/2,H()/2);apply()}
+
+/* ---------- music ---------- */
+const MUSIC_DIR='music/';
+const TRACK={intro:'Music-Overworld_Day',ready:'Music-Overworld_Day',slime:'Music-Slime_Rain',king:'Music-Slime_Rain',lens:'Music-Overworld_Day',awake:'Music-Overworld_Day',mouth:'Music-Overworld_Day',eocdead:'Music-Overworld_Day',goblin:'Music-Goblin_Army',gps:'Music-Overworld_Day',chest:'Music-Underground',truth:'Music-Underground_Crimson',choose:'Music-克腦',bocdead:'Music-Underground_Crimson',jungle:null,queen:'Music-Jungle',rest:'Music-Jungle',oldman:'Music-Dungeon',skel:'Music-Dungeon',head:'Music-Dungeon',skeldead:'Music-Dungeon',hell:'Music-Underworld',forge:'Music-Underworld',nights:'Music-Underworld',wof:'Music-肉牆',hard:'Music-Overworld_Day',spawn:'Music-Overworld_Day',ending:'Music-Overworld_Day'};
+const bgm={el:new Audio(),cur:null,unlocked:false,muted:false};
+bgm.el.loop=true;bgm.el.volume=.55;
+try{bgm.muted=localStorage.getItem(KEY+'-mute')==='1'}catch(e){}
+function bgmFor(step){const t=TRACK[step];if(bgm.muted||!bgm.unlocked||!t){bgm.el.pause();if(!t)bgm.cur=null;return}
+ if(bgm.cur===t){if(bgm.el.paused)bgm.el.play().catch(()=>{});return}
+ bgm.cur=t;const v0=bgm.el.volume;let k=0;const f=setInterval(()=>{k++;bgm.el.volume=Math.max(0,v0*(1-k/6));if(k>=6){clearInterval(f);bgm.el.src=MUSIC_DIR+encodeURIComponent(t)+'.mp3';bgm.el.volume=.55;bgm.el.play().catch(()=>{})}},60)}
+document.addEventListener('pointerdown',()=>{if(!bgm.unlocked){bgm.unlocked=true;bgmFor(S.step)}},{capture:true});
+function muteBtn(){const b=$('#mbtn');if(b)b.textContent=bgm.muted?'靜音':'音樂'}
+$('#mbtn').onclick=e=>{e.stopPropagation();bgm.muted=!bgm.muted;try{localStorage.setItem(KEY+'-mute',bgm.muted?'1':'0')}catch(err){};muteBtn();bgm.unlocked=true;bgmFor(S.step)};muteBtn();
 
 /* ---------- compass ---------- */
 let heading=null,compassListening=false;
