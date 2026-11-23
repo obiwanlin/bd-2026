@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>泰拉瑞亞：通往困難模式</title>
+<style>
+@font-face{font-family:FP;src:url(assets/font.woff2) format("woff2");font-display:block}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;height:100%;background:#05060f}
+body{font-family:FP,"PingFang TC","Noto Sans TC",monospace;color:#fff;-webkit-font-smoothing:none;font-smooth:never;overscroll-behavior:none}
+button,input{font-family:inherit}
+img{image-rendering:pixelated;image-rendering:crisp-edges}
+#app{max-width:440px;margin:0 auto;height:100vh;height:100dvh;display:flex;flex-direction:column;position:relative;overflow:hidden;background:var(--bg,#05060f);transition:background .6s}
+.ts{text-shadow:2px 2px 0 #000}
+/* HUD */
+.hud{display:flex;align-items:center;gap:8px;padding:10px 12px 6px;flex-shrink:0}
+.hearts{display:flex;flex-wrap:wrap;gap:2px;width:132px}
+.hearts img{width:12px}
+.area{flex:1;text-align:center;font-size:24px;color:#cfd8ff;text-shadow:2px 2px 0 #000}
+.buffs{display:flex;gap:4px}
+.buffs img{width:24px}
+.gbtn{width:44px;height:44px;border-radius:6px;border:3px solid #0f1638;background:#3f5297;box-shadow:inset 0 0 0 2px #6a7cc9;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer}
+.gbtn img{width:30px}
+/* boss bar */
+.boss{margin:2px 14px 0;display:flex;align-items:center;gap:8px;flex-shrink:0}
+.boss img{width:30px}
+.bar{flex:1;height:22px;background:#1a0b0b;border:3px solid #0f0f22;border-radius:4px;overflow:hidden;position:relative}
+.bar i{display:block;height:100%;background:linear-gradient(#ff5a5a,#b81c1c);transition:width .8s}
+.bar span{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:12px;text-shadow:1px 1px 0 #000;font-style:normal}
+/* main */
+main{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;padding:12px 16px 16px;display:flex;flex-direction:column;gap:14px;position:relative}
+main.center{justify-content:center}
+.say{font-size:24px;line-height:1.45;text-shadow:2px 2px 0 #000}
+.c{text-align:center}
+.dim{color:#9fb0e8}
+.small{font-size:12px;line-height:1.6;color:#9fb0e8;text-shadow:1px 1px 0 #000}
+.banner{font-size:36px;line-height:1.25;text-align:center;text-shadow:3px 3px 0 #000}
+.title{font-size:48px;text-align:center;color:#ffd75a;text-shadow:3px 3px 0 #6b3d00,5px 5px 0 #000}
+.gold{color:#ffd75a}.purple{color:#b46cff}.red{color:#ff6a6a}.green{color:#8fe39a}.orange{color:#ff9b3d}
+.panel{background:rgba(23,30,74,.93);border:3px solid #080b20;box-shadow:inset 0 0 0 3px #3a4896;border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:10px}
+.row{display:flex;gap:10px;align-items:center}
+.mid{display:flex;justify-content:center;align-items:center;gap:14px}
+.btn{font-size:24px;color:#fff;background:#4f63c4;border:3px solid #18214f;box-shadow:inset 0 3px 0 #8a9cf0;border-radius:6px;min-height:52px;padding:0 16px;cursor:pointer;text-shadow:2px 2px 0 #000;flex-shrink:0}
+.btn:active{transform:translateY(2px)}
+.btn.gold{background:#c28a22;box-shadow:inset 0 3px 0 #ffe08a}
+.btn.red{background:#b4413a;box-shadow:inset 0 3px 0 #ff9a8a}
+.btn.dark{background:#2b3a7a;box-shadow:inset 0 3px 0 #5468b8}
+.btn.wide{width:100%}
+.inp{font-size:24px;background:#0f1638;color:#fff;border:3px solid #3a4896;border-radius:6px;padding:10px 12px;flex:1;min-width:0;outline:none}
+.inp:focus{border-color:#ffd75a}
+.msg{min-height:24px;font-size:24px;text-shadow:2px 2px 0 #000}
+.shake{animation:shake .35s}
+@keyframes shake{20%,60%{transform:translateX(-6px)}40%,80%{transform:translateX(6px)}}
+.guide{display:flex;gap:10px;align-items:flex-start}
+.guide img{width:40px;flex-shrink:0}
+.guide .panel{font-size:24px;line-height:1.4;padding:10px 12px;text-shadow:2px 2px 0 #000}
+.wait{font-size:12px;color:#8f86c9;text-align:center;text-shadow:1px 1px 0 #000;animation:blink 2s infinite}
+@keyframes blink{50%{opacity:.4}}
+/* slots */
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.slot{height:84px;background:#3f5297;border:3px solid #18214f;box-shadow:inset 0 0 0 2px #6a7cc9;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;color:#5f6fae;font-size:24px;padding:0}
+.slot.got{background:#5b6fc2;color:#ffd75a;text-shadow:2px 2px 0 #000}
+.slot img{width:22px}
+/* toolbar */
+.toolbar{display:flex;gap:10px;padding:10px 14px calc(14px + env(safe-area-inset-bottom));background:rgba(5,8,25,.75);border-top:3px solid #0f1638;flex-shrink:0}
+.tool{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 4px;background:#3f5297;border:3px solid #0f1638;box-shadow:inset 0 0 0 2px #6a7cc9;border-radius:6px;color:#fff;font-size:24px;cursor:pointer;text-shadow:2px 2px 0 #000}
+.tool img{width:30px}.tool span{font-size:12px}
+.tool.off{background:#2c3566;box-shadow:inset 0 0 0 2px #3a4580;color:#5f6aa0;cursor:default}
+.tool.off img{opacity:.18;filter:grayscale(1)}
+.tool.glow{border-color:#ffd75a;animation:glow 1.2s infinite}
+@keyframes glow{50%{box-shadow:inset 0 0 0 2px #ffe08a,0 0 16px #ffd75a}}
+/* modal */
+#modal{position:absolute;inset:0;background:rgba(0,0,10,.72);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}
+#modal.on{display:flex}
+.mbox{width:100%;max-height:100%;overflow-y:auto;display:flex;flex-direction:column;gap:12px}
+#toast{position:absolute;top:70px;left:50%;transform:translateX(-50%);z-index:30;pointer-events:none;opacity:0;transition:opacity .3s;font-size:24px;padding:10px 16px;white-space:nowrap}
+#toast.on{opacity:1}
+/* radio */
+#radio,#compass{position:absolute;left:10px;right:10px;bottom:84px;z-index:15;display:none}
+#radio.on,#compass.on{display:block}
+#spec{width:100%;height:200px;display:block;background:#000;border:3px solid #0f1638;image-rendering:pixelated}
+/* animations */
+.float{animation:float 2.4s ease-in-out infinite}
+@keyframes float{50%{transform:translateY(-10px)}}
+.bounce{animation:bounce 1.1s ease-in-out infinite;transform-origin:bottom}
+@keyframes bounce{0%,100%{transform:scale(1.06,.92)}50%{transform:scale(.95,1.06) translateY(-14px)}}
+.spin{animation:spin 2.2s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fall{position:absolute;top:-60px;animation:fall linear infinite;pointer-events:none}
+@keyframes fall{to{transform:translateY(900px)}}
+.bee{position:absolute;pointer-events:none;animation:buzz 3s ease-in-out infinite alternate}
+@keyframes buzz{0%{transform:translate(0,0)}33%{transform:translate(40px,-20px) scaleX(-1)}66%{transform:translate(-30px,15px)}100%{transform:translate(20px,-10px) scaleX(-1)}}
+.flash{animation:flash .6s}
+@keyframes flash{0%{filter:brightness(4) saturate(0)}100%{filter:none}}
+.hit{animation:hit .6s}
+@keyframes hit{0%,100%{filter:none;transform:none}30%{filter:brightness(2.5) sepia(1) hue-rotate(-40deg);transform:translateX(6px)}}
+.fade{animation:fadein .8s both}
+@keyframes fadein{from{opacity:0;transform:translateY(8px)}}
+/* wof */
+.stage{position:relative;height:360px;flex-shrink:0}
+.wall{position:absolute;right:-30px;top:0;bottom:0;width:150px;background:repeating-linear-gradient(0deg,#5a1a24 0 10px,#6e2230 10px 20px);border-left:6px solid #3a0c14}
+.sock{display:flex;flex-direction:column;align-items:center;gap:2px;background:none;border:0;color:#fff;font-size:24px;cursor:pointer;padding:0;text-shadow:2px 2px 0 #000}
+.sock .hole{width:36px;height:40px;border:3px dashed #6b7099;border-radius:3px;background:rgba(0,0,0,.25)}
+.sock img{width:36px;height:40px;object-fit:contain}
+.levers{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.stars{position:absolute;inset:0;pointer-events:none;overflow:hidden}
+</style>
+</head>
+<body>
+<div id="app">
+  <header class="hud">
+    <div class="hearts" id="hearts"></div>
+    <div class="area" id="area"></div>
+    <div class="buffs" id="buffs"></div>
+    <button class="gbtn" id="gbtn" aria-label="嚮導選單"><img src="assets/guideicon.png" alt=""></button>
+  </header>
+  <div id="bossw"></div>
+  <main id="main"></main>
+  <div id="radio"><div class="panel">
+    <div class="row"><img src="assets/radio.png" alt="" style="width:34px"><div class="say" style="flex:1">天氣收音機</div><button class="btn dark" id="radioClose" style="min-height:40px">關閉</button></div>
+    <canvas id="spec" width="336" height="200"></canvas>
+    <div class="small" id="radioNote">能讓你看見聲音。</div>
+  </div></div>
+  <div id="compass"><div class="panel">
+    <div class="row"><img src="assets/compass.png" alt="" style="width:34px"><div class="say" style="flex:1">羅盤</div><button class="btn dark" id="compassClose" style="min-height:40px">關閉</button></div>
+    <canvas id="dial" width="240" height="240" style="width:240px;height:240px;margin:0 auto;display:block"></canvas>
+    <div class="say c gold" id="heading">－</div>
+    <button class="btn wide gold" id="compassStart">開始使用羅盤</button>
+    <div class="small" id="compassNote">手機平放，上緣對著你要走的方向。方向怪怪的話，拿著手機在空中畫幾次 8 字。</div>
+  </div></div>
+  <nav class="toolbar" id="toolbar"></nav>
+  <div id="modal"><div class="mbox" id="mbox"></div></div>
+  <div id="toast" class="panel"></div>
+</div>
+<script>
+/* ============ 勘查後要改的地方都在這裡 ============ */
+const CFG = {
+  guidePin: '0000',                       // 嚮導密碼：改成你自己的 4 位數
+  photos: [                               // 克眼 6 個拍攝點的檢查問題（勘查後填）
+    {q:'照片 1：（勘查後填檢查問題）　示範答案：1', a:['1']},
+    {q:'照片 2：（勘查後填檢查問題）　示範答案：2', a:['2']},
+    {q:'照片 3：（勘查後填檢查問題）　示範答案：3', a:['3']},
+    {q:'照片 4：（勘查後填檢查問題）　示範答案：4', a:['4']},
+    {q:'照片 5：（勘查後填檢查問題）　示範答案：5', a:['5']},
+    {q:'照片 6：（勘查後填檢查問題）　示範答案：6', a:['6']},
+  ],
+  lensArrows: ['↑3','←2','↓6','→4','↑3','←1'],
+  eocEnd: {q:'到了嗎？那裡有什麼？（勘查後填）　示範答案：長椅', a:['長椅']},
+  goblinWest: {options:['垃圾桶','路燈','雕塑','飲水機'], a:'路燈'},   // 往西 20 步有什麼（勘查後填）
+  gpsStart: '○○',                          // GPS 起點（勘查後填）
+  larvaText: '幼蟲在第七根欄杆下',            // 頻譜裡的字（勘查後換）
+  spawn: {q:'出生點的告示牌上寫著什麼？（勘查後填）　示範答案：內惟埤', a:['內惟埤']},
+};
+/* ================================================= */
+
+const STEPS=['intro','ready','slime','king','lens','awake','mouth','eocdead','goblin','gps','chest','truth','choose','bocdead','jungle','queen','rest','oldman','skel','head','skeldead','hell','forge','nights','wof','hard','spawn','ending'];
+const LABEL={intro:'序章',ready:'序章・等史萊姆雨',slime:'史萊姆雨',king:'史萊姆王',lens:'克眼・收集透鏡',awake:'克眼・視力表',mouth:'克眼・牙齒',eocdead:'克眼打倒・等哥布林',goblin:'哥布林入侵',gps:'GPS 導航',chest:'地下金箱・等飛眼怪',truth:'克腦・飛眼怪',choose:'克腦・選真身',bocdead:'克腦打倒・等叢林',jungle:'叢林・收音機',queen:'蜂王・字盤',rest:'休息・等地牢',oldman:'骷髏王・老人',skel:'骷髏王・兩隻手',head:'骷髏王・頭',skeldead:'骷髏王打倒・等地獄',hell:'地獄・獄石',forge:'獄火熔爐・等合成',nights:'永夜刃・等犧牲',wof:'血肉牆',hard:'困難模式',spawn:'回到出生點',ending:'重生點'};
+const TRIG=[['史萊姆雨','slime'],['哥布林入侵','goblin'],['地下金箱','chest'],['飛眼怪','truth'],['進入叢林','jungle'],['進入地牢','oldman'],['進入地獄','hell'],['合成永夜刃','nights'],['嚮導之死','wof'],['顯示電路圖','circuit']];
+const BG={day:'linear-gradient(180deg,#3a63c9 0%,#6f9ae8 55%,#9bc3f2 82%,#5d9a3a 82%,#4a7d2c 100%)',night:'linear-gradient(180deg,#05060f 0%,#11152b 60%,#1c2140 100%)',crimson:'linear-gradient(180deg,#14040a 0%,#2e0a16 55%,#4a1222 100%)',jungle:'linear-gradient(180deg,#0a1a10 0%,#16361c 55%,#24502a 100%)',dungeon:'repeating-linear-gradient(0deg,rgba(0,0,0,.25) 0 2px,transparent 2px 28px),repeating-linear-gradient(90deg,rgba(0,0,0,.18) 0 2px,transparent 2px 56px),linear-gradient(180deg,#0d1430,#1b2552)',hell:'linear-gradient(180deg,#1a0306 0%,#3a0a10 60%,#6a1a12 100%)',hard:'linear-gradient(180deg,#120624 0%,#2a1050 50%,#3d1a6a 100%)',dawn:'linear-gradient(180deg,#1b2a6a 0%,#6a5aa8 45%,#f0a070 85%,#ffd59a 100%)'};
+const AREA={intro:['地表','day'],ready:['地表','day'],slime:['地表','day'],king:['地表','day'],lens:['地表・夜晚','night'],awake:['地表・夜晚','night'],mouth:['地表・夜晚','night'],eocdead:['地表・夜晚','night'],goblin:['地表','day'],gps:['地表','day'],chest:['地下','night'],truth:['猩紅之地','crimson'],choose:['猩紅之地','crimson'],bocdead:['猩紅之地','crimson'],jungle:['叢林','jungle'],queen:['叢林','jungle'],rest:['叢林','jungle'],oldman:['地牢','dungeon'],skel:['地牢','dungeon'],head:['地牢','dungeon'],skeldead:['地牢','dungeon'],hell:['地獄','hell'],forge:['地獄','hell'],nights:['地獄','hell'],wof:['地獄','hell'],hard:['困難模式','hard'],spawn:['出生點','dawn'],ending:['出生點','dawn']};
+
+/* ---------- state ---------- */
+const KEY='terraria-bday-2026';
+const FRESH=()=>({step:'intro',lenses:[],goblinStart:0,wave:0,skel:{l:0,r:0},wof:{lev:0,sw:[0,0,0,0,0,0,0]},sacSeen:0,brainsGone:[],spawnSet:0});
+let S=FRESH();
+try{const raw=localStorage.getItem(KEY); if(raw) S=Object.assign(FRESH(),JSON.parse(raw));}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+const idx=s=>STEPS.indexOf(s);
+const reached=s=>idx(S.step)>=idx(s);
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s);
+const I=(k,w,st='',cls='')=>`<img src="assets/${k}.png" alt="" class="${cls}" style="width:${w}px;${st}">`;
+const norm=s=>(s||'').normalize('NFKC').replace(/\s+/g,'').replace(/[「」『』"'。.，,、！!？?：:]/g,'').toLowerCase();
+const anyOf=(v,list)=>list.map(norm).includes(norm(v));
+const perm=(v,t)=>{const d=norm(v).replace(/\D/g,'');return d.length===t.length&&[...d].sort().join('')===[...t].sort().join('')};
+const say=(t,cls='')=>`<div class="say ${cls}">${t}</div>`;
+const banner=(t,cls)=>`<div class="banner ${cls} fade">${t}</div>`;
+const guideSay=t=>`<div class="guide">${I('guide',40)}<div class="panel">${t}</div></div>`;
+const wait=t=>`<div class="wait">${t||'（等嚮導……）'}</div>`;
+function ask(id,label,ph,btn){return `<form class="panel" data-form="${id}"><label class="say" for="f_${id}">${label}</label><div class="row"><input class="inp" id="f_${id}" placeholder="${ph||'輸入答案'}" autocomplete="off" autocapitalize="off" spellcheck="false"><button class="btn">${btn||'確定'}</button></div><div class="msg red" id="m_${id}"></div></form>`}
+let toastT;function toast(html){const t=$('#toast');t.innerHTML=html;t.classList.add('on');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('on'),2600)}
+function modal(html,buttons){$('#mbox').innerHTML=`<div class="panel">${html}</div>`+(buttons||[]).map((b,i)=>`<button class="btn wide ${b.cls||''}" data-mb="${i}">${b.t}</button>`).join('');$('#modal').classList.add('on');
+  $('#mbox').querySelectorAll('[data-mb]').forEach(el=>el.onclick=()=>{const b=buttons[+el.dataset.mb];if(!b.keep)closeModal();b.f&&b.f()});}
+function closeModal(){$('#modal').classList.remove('on');$('#mbox').innerHTML=''}
+function reward(title,items,line,next){modal(`<div class="banner green">${title}</div><div class="mid" style="flex-wrap:wrap">${items.map(k=>I(k,48)).join('')}</div>${say(line,'c')}`,[{t:'好',f:next}])}
+function go(step){S.step=step;save();render()}
+
+/* ---------- forms ---------- */
+const FORMS={};
+document.addEventListener('submit',e=>{const f=e.target.closest('[data-form]');if(!f)return;e.preventDefault();const id=f.dataset.form;const inp=f.querySelector('input');const r=FORMS[id]&&FORMS[id](inp.value,inp);
+  const m=document.getElementById('m_'+id);
+  if(r===true){inp.blur();}else{f.classList.remove('shake');void f.offsetWidth;f.classList.add('shake');if(m)m.textContent=(typeof r==='string')?r:'不對喔。';}});
+
+/* ---------- screens ---------- */
+const SCR={};
+SCR.intro=()=>({html:`<div class="mid" style="flex-direction:column;gap:4px;margin-top:10px"><div class="title">泰拉瑞亞</div><div class="say">通往困難模式</div></div>
+<div class="panel"><div class="say" id="gen">正在生成世界……</div><div class="bar" style="height:18px"><i id="genbar" style="width:0;background:#46c35a"></i></div></div>
+<div id="afterGen" style="display:none;flex-direction:column;gap:14px">${guideSay('你好，我是嚮導。這個世界剛生成，但有些東西已經醒了。')}${ask('card','第一題：你手上那張卡叫什麼？')}</div>`,
+ mount(){const bar=$('#genbar');setTimeout(()=>bar.style.width='100%',50);setTimeout(()=>{$('#gen').textContent='世界生成完畢';const a=$('#afterGen');a.style.display='flex';},1100)}});
+FORMS.card=v=>{if(anyOf(v,['角色卡','角色','人物卡','charactercard'])){go('ready');return true}};
+SCR.ready=()=>({center:1,html:`${banner('世界生成完畢','green')}<div class="mid">${I('guide',52,'','float')}</div>${guideSay('很好，你學會了。你出生時帶著的羅盤，就在下面的工具列。之後拿到的小方格，都貼到你的角色卡上。跟著我走吧。')}${wait()}`});
+
+SCR.slime=()=>({html:`<div class="stars">${[...Array(9)].map((_,i)=>`<img src="assets/slime.png" class="fall" alt="" style="width:${[36,48,40,56,32,44,52,38,46][i]}px;left:${(i*41+13)%340}px;animation-duration:${3+i%4}s;animation-delay:${-(i*0.7)}s">`).join('')}</div>
+<div style="flex:1"></div>${banner('史萊姆雨！','')}<div class="say c">天上掉下來的凝膠，拼成了一張圖。<br>跟嚮導拿那張紙。</div>${ask('crown','解出來的圖案是？')}`});
+FORMS.crown=v=>{if(anyOf(v,['金冠','王冠','皇冠','冠','皇冠','crown','goldcrown'])){modal(`<div class="say c">合成</div><div class="mid">${I('crown',60)}<div class="say">＋ 20 凝膠</div></div><div class="say c">↓</div><div class="mid">${I('slimecrown',60)}</div><div class="say c gold">史萊姆王冠</div>`,[{t:'使用',cls:'gold',f:()=>go('king')}]);return true}};
+SCR.king=()=>({boss:['kingicon','史萊姆王',100],html:`${banner('史萊姆王已經甦醒！','purple')}<div class="mid" style="height:200px;align-items:flex-end">${I('king',210,'','bounce')}</div>${say('牠把寶藏吞下去了。<br>跟嚮導拿那罐史萊姆，把肚子裡的東西挖出來。','c')}${ask('ninja','史萊姆王肚子裡的是？')}`});
+FORMS.ninja=v=>{if(anyOf(v,['忍者','小忍者','ninja'])){setBoss(0);setTimeout(()=>reward('史萊姆王被打敗了！',['bag','ninja'],'掉落：寶藏袋 #1<br>跟嚮導拿寶藏袋 #1。',()=>go('lens')),700);return true}};
+
+SCR.lens=()=>({html:`<div class="row">${I('demoneye',54)}<div class="banner gold" style="font-size:36px;text-align:left">惡魔眼的視角</div></div>${say('嚮導給你 6 張照片。找到每張照片是從哪裡拍的，站到那裡、點那一格回答問題，就能拿到一個透鏡。')}
+<div class="grid3">${CFG.photos.map((p,i)=>S.lenses.includes(i)?`<button class="slot got" data-a="lens" data-i="${i}">${I('lens',22)}<span>${CFG.lensArrows[i]}</span></button>`:`<button class="slot" data-a="lens" data-i="${i}">${i+1}</button>`).join('')}</div>
+<div class="say c dim">透鏡 ${S.lenses.length} / 6</div>`});
+function lensAsk(i){if(S.lenses.includes(i)){toast(`照片 ${i+1}：${CFG.lensArrows[i]}`);return}
+ modal(ask('ph','　'+CFG.photos[i].q,'輸入答案'),[{t:'取消',cls:'dark'}]);FORMS.ph=v=>{if(anyOf(v,CFG.photos[i].a)){closeModal();S.lenses.push(i);save();render();toast(`${I('lens',22)} 獲得透鏡 ${CFG.lensArrows[i]}`);
+  if(S.lenses.length===6)setTimeout(()=>modal(`<div class="say c">6 個透鏡</div><div class="mid">${I('lens',30).repeat(6)}</div><div class="say c">↓</div><div class="mid">${I('sus',72)}</div><div class="say c gold">可疑眼球</div>`,[{t:'使用',cls:'gold',f:()=>go('awake')}]),900);return true}};
+ setTimeout(()=>{const x=$('#f_ph');x&&x.focus()},100)}
+SCR.awake=()=>({boss:['eocicon','克蘇魯之眼',100],html:`${banner('克蘇魯之眼已經甦醒！','purple')}<div class="mid">${I('eoc',110,'','float')}</div>${say('牠一直盯著一張視力表。<br>跟嚮導拿視力表，走到牠在看的地方。','c')}
+<div class="row" style="justify-content:center;flex-wrap:wrap;gap:6px">${CFG.lensArrows.map((a,i)=>`<div class="slot got" style="height:56px;width:50px;font-size:12px">${I('lens',14)}<span style="font-size:24px">${a}</span></div>`).join('')}</div>${ask('end',CFG.eocEnd.q)}`});
+FORMS.end=v=>{if(anyOf(v,CFG.eocEnd.a)){go('mouth');return true}};
+SCR.mouth=()=>({boss:['eoc2icon','克蘇魯之眼',45],html:`${banner('眼睛裂開，變成了嘴！','red')}<div class="mid">${I('eocmouth',280,'border:3px solid #0f1638')}</div>${ask('teeth','給牠最後一擊！','4 位數','攻擊')}`});
+FORMS.teeth=v=>{if(perm(v,'3142')){setBoss(0);setTimeout(()=>go('eocdead'),700);return true}};
+SCR.eocdead=()=>({center:1,html:`${banner('克蘇魯之眼被打倒了！','green')}<div class="mid">${I('bag',72,'','float')}</div><div class="panel c"><div class="say">掉落：寶藏袋 #2</div></div>${say('跟嚮導拿寶藏袋 #2。','c')}${wait()}`});
+
+SCR.goblin=()=>{const W=S.wave;const waves=[['peon','第一波・哥布林苦工'],['standard','第二波・哥布林旗手'],['thief','第三波・哥布林小偷']];
+ let cur='';
+ if(W===0)cur=`<div class="row">${I('peon',30)}<div class="say">哥布林苦工衝過來了！</div></div>${ask('gw0','打敗哥布林軍隊後，被綁住的那位會賣你哪個合成站？')}`;
+ if(W===1)cur=`<div class="panel"><div class="row">${I('standard',36)}<div class="say" style="flex:1">哥布林旗手從西邊來了！用羅盤找出西方，往西走 20 步，看看牠躲在哪。</div></div><div class="grid3" style="grid-template-columns:repeat(2,minmax(0,1fr))">${CFG.goblinWest.options.map(o=>`<button class="btn" data-a="west" data-v="${o}">${o}</button>`).join('')}</div><div class="msg red" id="m_west"></div></div>`;
+ if(W===2)cur=`<form class="panel" data-form="gw2"><div class="row">${I('thief',36)}<div class="say" style="flex:1">3 隻哥布林小偷混進了隊伍，就在嚮導身上。找出牠們身上的數字！</div></div><div class="row">${[1,2,3].map(n=>`<input class="inp" id="t${n}" inputmode="numeric" maxlength="2" style="text-align:center" aria-label="小偷 ${n}">`).join('')}<button class="btn">擊退</button></div><div class="msg red" id="m_gw2"></div></form>`;
+ return {html:`${banner('哥布林軍隊正在逼近！','orange')}<div class="panel" style="gap:8px"><div class="row say" style="justify-content:space-between"><span>入侵進度</span><span class="gold" id="gtime">10:00</span></div><div class="bar" style="height:20px;background:#10173a"><i style="width:${Math.round(W/3*100)}%;background:#c8642a"></i></div><div class="msg red" id="gover"></div></div>
+ <div style="display:flex;flex-direction:column;gap:6px">${waves.map((w,i)=>`<div class="row say ${i<W?'green':i===W?'gold':'dim'}" style="font-size:24px">${I(w[0],26)}<span>${w[1]}${i<W?'　✓':''}</span></div>`).join('')}</div>${cur}`,
+ mount(){const tick=()=>{const el=$('#gtime');if(!el)return;const sec=Math.floor((Date.now()-S.goblinStart)/1000);const left=600-sec;
+   if(left>=0){el.textContent=`${String(Math.floor(left/60)).padStart(2,'0')}:${String(left%60).padStart(2,'0')}`}else{el.textContent='00:00';const m=Math.ceil(-left/60);$('#gover').textContent=`超時 ${m} 分鐘：哥布林小偷偷走了 ${m} 銀，交給嚮導。`}};
+   tick();timers.push(setInterval(tick,1000))}}};
+FORMS.gw0=v=>{if(norm(v).includes('工匠')||anyOf(v,["tinkerersworkshop","tinker'sworkshop"])){S.wave=1;save();render();return true}};
+FORMS.gw2=()=>{const vals=[1,2,3].map(n=>norm($('#t'+n).value)).sort().join(',');if(vals==='2,4,9'){S.wave=3;save();modal(`<div class="banner green">入侵被擊退了！</div><div class="mid">${I('tinker',48)}</div>${say('被綁住的哥布林工匠得救了。','c')}`,[{t:'繼續',f:()=>go('gps')}]);return true}return '小偷還在。'};
+function thiefGame(){const F=$('#field');if(!F)return;let caught=0;const W=F.clientWidth;
+ const spawn=()=>{if(!document.body.contains(F)||caught>=3)return;const thief=Math.random()<.38;const ltr=Math.random()<.5;const sz=thief?46:42;const y=8+Math.random()*(230-sz-40);
+  const b=document.createElement('button');b.style.cssText=`position:absolute;top:${y}px;left:0;padding:8px;background:none;border:0;cursor:pointer;touch-action:manipulation`;
+  b.innerHTML=I(thief?'thief':'peon',sz,ltr?'':'transform:scaleX(-1)');F.appendChild(b);
+  const from=ltr?-70:W+10,to=ltr?W+10:-70;const anim=b.animate([{transform:`translateX(${from}px)`},{transform:`translateX(${to}px)`}],{duration:thief?1500+Math.random()*500:2600+Math.random()*700,easing:'linear'});anim.onfinish=()=>b.remove();
+  b.addEventListener('pointerdown',e=>{e.preventDefault();if(thief){caught++;anim.cancel();b.remove();$('#caught').textContent=`${caught} / 3`;$('#m_thief').innerHTML='<span class="green">抓到了！</span>';
+    if(caught>=3){S.wave=3;save();setTimeout(()=>modal(`<div class="banner green">入侵被擊退了！</div><div class="mid">${I('tinker',48)}</div>${say('被綁住的哥布林工匠得救了。','c')}`,[{t:'繼續',f:()=>go('gps')}]),400)}}
+   else{$('#m_thief').textContent='那是苦工……小偷跑得比較快。'}})};
+ spawn();timers.push(setInterval(spawn,850))}
+SCR.gps=()=>({html:`${banner('哥布林工匠得救了！','green')}<div class="mid" style="align-items:flex-end">${I('tinker',54)}${I('compass',40)}${I('depth',40)}${I('watch',40)}</div><div class="say c">↓</div><div class="mid">${I('gps',72,'','float')}</div>${say('工匠拿出一個深度計，把它和你的羅盤、金錶，組成了一台 GPS。','c')}
+<div class="panel" style="font-size:24px;line-height:1.5"><div class="gold">GPS</div><div>從${CFG.gpsStart}出發。</div><div>方向看金錶，距離看深度計。</div></div>${say('走到了，就讓嚮導看看。','c dim')}`});
+SCR.chest=()=>({center:1,html:`${banner('你在地下找到一個金箱！','gold')}<div class="mid">${I('chest',96)}${I('mirror',72,'','float')}</div><div class="panel c"><div class="say gold">獲得：魔鏡</div><div class="say dim">凝視鏡子，就能回到家。</div></div>${say('魔鏡放在下面的工具列。','c dim')}${wait()}`,
+ mount(){if(!S.mirrorToast){S.mirrorToast=1;save();setTimeout(()=>toast(`${I('mirror',24)} 獲得魔鏡`),500)}}});
+
+let truthSel=[null,null,null,null];
+SCR.truth=()=>({html:`<div class="row">${I('bocicon',44)}<div class="banner gold" style="text-align:left">克蘇魯之腦</div></div>${say('4 隻飛眼怪各藏著一句話。解開後判斷每一句是真還是假，全部正確，飛眼怪才會全滅。')}
+<div class="panel">${['①','②','③','④'].map((n,i)=>`<div class="row">${I('creeper',38)}<span class="say" style="flex:1">飛眼怪 ${n}</span><button class="btn ${truthSel[i]===1?'gold':'dark'}" data-a="tf" data-i="${i}" data-v="1" style="min-width:64px">真</button><button class="btn ${truthSel[i]===0?'gold':'dark'}" data-a="tf" data-i="${i}" data-v="0" style="min-width:64px">假</button></div>`).join('')}</div>
+<button class="btn wide" data-a="truthgo">送出</button>${say('判斷錯一次，付給嚮導 1 銀。','c red')}`});
+SCR.choose=()=>({boss:['bocicon','克蘇魯之腦',60],html:`${banner('飛眼怪全滅！','purple')}${say('克蘇魯之腦開始製造幻象。<br>5 個腦裡只有 1 個是真身。<br>跟嚮導拿腦卡。','c')}
+<div class="grid3">${'ABCDE'.split('').map(k=>S.brainsGone.includes(k)?`<div class="slot" style="height:110px;opacity:.3">${k}<br><span style="font-size:12px">幻象</span></div>`:`<button class="slot got" style="height:110px" data-a="brain" data-v="${k}">${I('bocicon',46,'','float')}<span>${k}</span></button>`).join('')}</div>${say('選錯：你被混亂了！付給嚮導 1 金。','c red')}`});
+SCR.bocdead=()=>({center:1,html:`${banner('克蘇魯之腦被打倒了！','green')}<div class="mid">${I('bag',72,'','float')}${I('radio',56)}</div><div class="panel c"><div class="say">掉落：寶藏袋 #3</div><div class="say gold">獲得：天氣收音機</div><div class="say dim">能讓你看見聲音。</div></div>${say('跟嚮導拿寶藏袋 #3。','c')}${wait()}`,
+ mount(){if(!S.radioToast){S.radioToast=1;save();setTimeout(()=>toast(`${I('radio',24)} 獲得天氣收音機`),500)}}});
+
+SCR.jungle=()=>({html:`<div class="stars">${[...Array(5)].map((_,i)=>`<img src="assets/bee.png" class="bee" alt="" style="width:${20+i%3*6}px;left:${30+i*62}px;top:${60+(i*53)%160}px;animation-duration:${2+i%3}s">`).join('')}</div>
+<div class="banner" style="color:#8fe36a;margin-top:6px">叢林</div>
+${audio.on?`${say('嗡嗡嗡……<br>四周全是蜜蜂的聲音。','c')}<div style="flex:1"></div><div class="mid">${I('larva',56)}</div><button class="btn wide" data-a="larva">打破幼蟲</button>`:`${say('前面的草叢裡傳來奇怪的聲音。','c')}<div class="small c">（手機音量打開、關掉靜音）</div><div style="flex:1"></div><button class="btn wide gold" data-a="enterJungle">進入叢林</button>`}`});
+SCR.queen=()=>({boss:['qbicon','蜂王',70],html:`${banner('蜂王已經甦醒！','purple')}<div class="mid" style="height:170px">${I('qb',190,'','float')}</div>${say('幼蟲盒裡有一張蜂巢字盤。蜂王飛過的字，會告訴你她的寶藏在哪。','c')}${ask('honey','找到蜂王的寶藏了嗎？它的標籤上寫著什麼？')}`});
+FORMS.honey=v=>{if(anyOf(v,['瓶裝蜂蜜','bottledhoney'])){setBoss(0);S.honey=1;save();setTimeout(()=>reward('蜂王被打敗了！',['bag','honey'],'掉落：寶藏袋 #4<br>獲得增益：蜂蜜<br>跟嚮導拿寶藏袋 #4。',()=>go('rest')),700);return true}};
+SCR.rest=()=>({center:1,html:`${banner('休息一下','gold')}<div class="mid">${I('honey',60,'','float')}</div>${say('喝點蜂蜜，回復生命值。','c')}${wait('（休息完，跟著嚮導走）')}`});
+
+SCR.oldman=()=>({center:1,html:`<div class="mid">${I('oldman',90)}</div><div class="panel c" style="font-size:24px;line-height:1.4">老人：「我只在夜裡說話。」</div>${say('地牢入口前站著一個駝背的老人。','c dim')}${ask('curse','你想對老人說什麼？','輸入兩個字','說出口')}`});
+FORMS.curse=v=>{if(anyOf(v,['詛咒','curse'])){$('#main').classList.add('flash');setTimeout(()=>go('skel'),600);return true}return '老人：「……」'};
+SCR.skel=()=>({boss:['skelicon','骷髏王',100-(S.skel.l+S.skel.r)*30],html:`${banner('骷髏王已經甦醒！','purple')}<div class="mid" style="height:110px;gap:0">${I('skelhand',44,`transform:scaleX(-1) rotate(-20deg);${S.skel.l?'opacity:.25':''}`)}${I('skelhead',84,'','float')}${I('skelhand',44,`transform:rotate(-20deg);${S.skel.r?'opacity:.25':''}`)}</div>
+${S.skel.l?say('左手：已擊倒 ✓','green'):ask('lh','左手的密碼','4 位數','攻擊')}${S.skel.r?say('右手：已擊倒 ✓','green'):bonePanel()}`,mount(){if(!S.skel.r)drawBones()}});
+FORMS.lh=v=>{if(norm(v)==='6315'){S.skel.l=1;save();handDrop('左手');return true}};
+const DSEG={0:'abcdef',1:'bc',2:'abdeg',3:'abcdg',4:'bcfg',5:'acdfg',6:'acdefg',7:'abc',8:'abcdefg',9:'abcdfg'};
+const BONE0=()=>[[...'abcdef'],[...'acdefg'],[...'bc'],[...'abcdg']];
+let bones=BONE0(),picked=null,moved=false;
+function bonePanel(){return `<div class="panel"><div class="say">右手：骨頭算式</div><div class="say dim" style="font-size:24px">只移動一根骨頭，讓等式成立。<br>點一根骨頭拿起來，再點空位放下。</div><svg id="bones" viewBox="0 0 330 120" style="width:100%;background:#0b1028;border:3px solid #0f1638;border-radius:4px;touch-action:manipulation"></svg><div class="row"><div class="msg red" id="m_bone" style="flex:1"></div><button class="btn dark" data-a="boneReset">重來</button></div></div>`}
+function segRect(ox,oy,s){const L=30,T=8;const P={a:[0,0,L,0],b:[L,0,L,L],c:[L,L,L,2*L],d:[0,2*L,L,2*L],e:[0,L,0,2*L],f:[0,0,0,L],g:[0,L,L,L]}[s];const [x1,y1,x2,y2]=P.map((v,i)=>v+(i%2?oy:ox));
+ return x1===x2?{x:x1-T/2,y:y1+4,w:T,h:y2-y1-8,v:1}:{x:x1+4,y:y1-T/2,w:x2-x1-8,h:T,v:0}}
+function boneSVG(r,cls,attrs){const T=8;const k=[];if(r.v){k.push([r.x+T*.15,r.y],[r.x+T*.85,r.y],[r.x+T*.15,r.y+r.h],[r.x+T*.85,r.y+r.h])}else{k.push([r.x,r.y+T*.15],[r.x,r.y+T*.85],[r.x+r.w,r.y+T*.15],[r.x+r.w,r.y+T*.85])}
+ return `<g class="${cls}" ${attrs||''}><rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="3"/>${k.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="4.2"/>`).join('')}</g>`}
+function drawBones(){const svg=$('#bones');if(!svg)return;const OX=[14,92,196,252],OY=26;let h=`<style>.bn rect,.bn circle{fill:#e8dcc0;stroke:#6b5a3a;stroke-width:1.5}.bn.sel rect,.bn.sel circle{fill:#ffd75a;stroke:#fff}.bn.fix rect,.bn.fix circle{fill:#b8ab8e}.slot0 rect{fill:rgba(255,255,255,.04);stroke:rgba(255,255,255,.22);stroke-dasharray:3 3}.slot0 circle{display:none}</style>`;
+ bones.forEach((segs,d)=>{for(const s of 'abcdefg'){const r=segRect(OX[d],OY,s);const on=segs.includes(s);const sel=picked&&picked[0]===d&&picked[1]===s;
+   h+=on?boneSVG(r,'bn'+(sel?' sel':''),`data-b="${d}${s}" style="cursor:pointer"`):boneSVG({x:r.x+1,y:r.y+1,w:r.w-2,h:r.h-2,v:r.v},'slot0',`data-e="${d}${s}" style="cursor:pointer"`)}});
+ h+=boneSVG({x:54,y:51,w:24,h:8,v:0},'bn fix')+boneSVG({x:62,y:43,w:8,h:24,v:1},'bn fix');
+ h+=boneSVG({x:150,y:44,w:28,h:8,v:0},'bn fix')+boneSVG({x:150,y:58,w:28,h:8,v:0},'bn fix');
+ svg.innerHTML=h;
+ svg.querySelectorAll('[data-b]').forEach(g=>g.addEventListener('click',()=>{if(moved)return;const d=+g.dataset.b[0],s=g.dataset.b[1];picked=(picked&&picked[0]===d&&picked[1]===s)?null:[d,s];drawBones()}));
+ svg.querySelectorAll('[data-e]').forEach(g=>g.addEventListener('click',()=>{if(moved||!picked)return;const d=+g.dataset.e[0],s=g.dataset.e[1];bones[picked[0]]=bones[picked[0]].filter(x=>x!==picked[1]);bones[d].push(s);picked=null;moved=true;drawBones();checkBones()}))}
+function checkBones(){const ds=bones.map(b=>{const k=Object.keys(DSEG).find(n=>[...DSEG[n]].sort().join('')===[...b].sort().join(''));return k===undefined?null:+k});
+ if(!ds.includes(null)&&ds[0]+ds[1]===ds[2]*10+ds[3]){setTimeout(()=>{S.skel.r=1;save();handDrop('右手')},500)}
+ else{$('#m_bone').textContent=ds.includes(null)?'那不是數字。按「重來」。':'等式不成立。按「重來」。'}}
+function handDrop(h){modal(`<div class="banner green">${h}被打倒了！</div><div class="mid">${I('skelhand',56)}</div>${say(`掉落：骷髏王${h}袋<br>跟嚮導拿${h}袋。`,'c')}`,[{t:'好',f:()=>{if(S.skel.l&&S.skel.r){go('head')}else render()}}])}
+
+SCR.head=()=>({boss:['skelicon','骷髏王',40],html:`${banner('兩隻手都被打倒了！','green')}<div class="mid" style="height:210px">${I('skelhead',150,'','spin')}</div>${say('骷髏王的頭一直在轉……','c dim')}${ask('key','金鑰匙被交給了誰保管？')}`});
+FORMS.key=v=>{if(anyOf(v,['地牢史萊姆','地牢的史萊姆','dungeonslime'])){setBoss(0);setTimeout(()=>go('skeldead'),700);return true}if(norm(v).includes('史萊姆'))return '哪一種史萊姆？'};
+SCR.skeldead=()=>({center:1,html:`${banner('骷髏王被打倒了！','green')}<div class="mid">${I('dslime',80,'','bounce')}${I('key',30)}</div>${say('那隻史萊姆就躲在地牢裡。找到牠、拿到金鑰匙，交給嚮導就能換到金箱。','c')}${wait()}`});
+
+SCR.hell=()=>({html:`<div class="row" style="justify-content:center">${I('hellstone',32)}<div class="banner orange">地獄</div>${I('hellstone',32)}</div><div class="mid" style="gap:4px">${['lava','hellstone','lava','lava','hellstone','lava'].map(k=>I(k,48)).join('')}</div>${say('獄石周圍都是岩漿，挖錯就會被燒。<br>跟嚮導拿地獄礦脈卡。','c')}<div style="flex:1"></div>${ask('hs','獄石圈圈裡的數字','4 位數','鍛造')}`});
+FORMS.hs=v=>{if(perm(v,'5286')){go('forge');return true}};
+SCR.forge=()=>({center:1,html:`${banner('獄石煉好了！','orange')}<div class="mid">${I('hellforge',80)}${I('volcano',70,'','float')}</div><div class="panel c"><div class="say">掉落：獄火熔爐</div><div class="say gold">火山</div></div>${say('跟嚮導拿獄火熔爐的小袋，裡面是最後一把劍。<br>四把劍都貼好後，跟嚮導拿猩紅祭壇。','c')}${wait()}`});
+SCR.nights=()=>({center:1,html:`<div class="mid" style="gap:8px">${['butcher','grass','muramasa','volcano'].map(k=>I(k,56,'','fade')).join('')}</div><div class="say c">↓</div><div class="mid">${I('altar',110)}</div><div class="mid">${I('nightsedge',110,'','float flash')}</div>${banner('合成成功：永夜刃','gold')}${say('血腥屠刀＋草劍＋村正＋火山','c dim')}${wait()}`});
+
+const WOF_T=['左眼','右眼','嘴','飢餓者'];
+SCR.wof=()=>{const w=S.wof;
+ const socks='ABCDEFG'.split('').map((L,i)=>w.lev?`<button class="sock" data-a="sw" data-i="${i}">${I('lever',36,w.sw[i]?'transform:scaleX(-1)':'')}<span>${L}</span><span class="${w.sw[i]?'green':'dim'}" style="font-size:12px">${w.sw[i]?'開':'關'}</span></button>`:`<button class="sock" data-a="sock"><div class="hole"></div><span>${L}</span></button>`).join('');
+ return {boss:['woficon','血肉牆',100],html:`<div class="stage"><div class="wall"></div>
+ <div style="position:absolute;right:-28px;top:6px">${I('wofeye',100,'','','')}</div>
+ <div id="t0" style="position:absolute;right:-28px;top:6px;width:100px;height:80px"></div>
+ <div id="t2" style="position:absolute;right:-34px;top:122px">${I('wofmouth',110)}</div>
+ <div style="position:absolute;right:-28px;top:250px">${I('wofeye',100,'transform:scaleY(-1)')}</div>
+ <div id="t1" style="position:absolute;right:-28px;top:250px;width:100px;height:80px"></div>
+ <div style="position:absolute;right:76px;top:190px;width:70px;height:4px;background:#7a1e24;transform:rotate(-14deg)"></div>
+ <div id="t3" style="position:absolute;right:140px;top:174px" class="float">${I('hungry',56)}</div>
+ <div id="wofmsg" class="msg red" style="position:absolute;left:0;top:0;width:200px;line-height:1.4"></div></div>
+ <div class="panel" style="margin-top:-40px;width:250px;z-index:2"><div class="levers">${socks}</div><button class="btn wide red" data-a="fire">發射</button></div>`,
+ mount(){if(!S.sacSeen){S.sacSeen=1;save();sacrifice()}}}};
+function sacrifice(){modal(`<div class="mid" style="height:150px;position:relative">${I('doll',40,'','fade')}</div><div style="height:30px;background:linear-gradient(#ff9b2a,#d8431c);border-top:4px solid #ffd75a"></div><div class="banner red fade" style="animation-delay:.8s">嚮導被殺死了。</div><div class="banner purple fade" style="animation-delay:2s">血肉牆已經甦醒！</div>`,[{t:'……',cls:'dark'}])}
+function wofFire(){const w=S.wof;if(!w.lev)return;const [A,B,C,D,E,F,G]=w.sw;
+ const hits=[((F|G|D)^B)===1,((C&E)^B)===1,((E^F)^D)===1,((E+G+A)===1)&&((D^G)===1)];
+ const n=hits.filter(Boolean).length;
+ hits.forEach((h,i)=>{if(h){const el=$('#t'+i);if(el){const tgt=i===2?el:(i===3?el:el.previousElementSibling);(tgt||el).classList.remove('hit');void (tgt||el).offsetWidth;(tgt||el).classList.add('hit')}}});
+ if(n===4){setBoss(0);$('#wofmsg').innerHTML='<span class="green">四支全中！</span>';setTimeout(()=>go('hard'),1500)}
+ else{$('#wofmsg').textContent=`命中 ${n} 支。血肉牆前進了！付給嚮導 1 銀。`}}
+SCR.hard=()=>({center:1,html:`<div class="banner fade" style="color:#46ff8a">古老的光明與黑暗之靈已被釋放</div><div class="say c fade" style="animation-delay:1.2s">世界進入了困難模式。</div><div class="banner fade" style="color:#4f8fff;animation-delay:2.4s">嚮導已經抵達！</div><div class="mid fade" style="animation-delay:2.6s">${I('guide',60)}</div><div class="fade" style="animation-delay:3.4s">${guideSay('世界變難了。出發之前，先回家吧。')}</div>`});
+SCR.spawn=()=>({center:1,html:`<div class="mid">${I('mirror',80,'','float')}</div>${banner('凝視鏡子……','')}${say('一陣光把你帶回了這個世界開始的地方。','c')}${ask('spawn',CFG.spawn.q)}`});
+FORMS.spawn=v=>{if(anyOf(v,CFG.spawn.a)){go('ending');return true}};
+SCR.ending=()=>({center:1,html:`<div class="stars" id="stars"></div>${banner('你回到了出生點','gold')}<div class="mid" style="padding:6px 0">${I('bed',130)}</div>
+${S.spawnSet?`<div class="banner purple fade">重生點已設定</div><div class="title fade" style="animation-delay:.8s">生日快樂！</div><div class="say c fade dim" style="animation-delay:1.6s">剩下的金幣，可以跟嚮導換願望券。</div>`:`${say('嚮導手上還有最後一張卡。','c')}<button class="btn wide gold" data-a="setspawn">設定重生點</button>`}`,
+ mount(){if(S.spawnSet)starfall()}});
+function starfall(){const st=$('#stars');if(!st)return;st.innerHTML=[...Array(14)].map((_,i)=>`<img src="assets/star.png" class="fall" alt="" style="width:${14+i%3*6}px;left:${(i*29+7)%360}px;animation-duration:${3+i%4}s;animation-delay:${-(i*0.5)}s">`).join('')}
+
+/* ---------- render ---------- */
+let timers=[];
+function setBoss(p){const b=$('#bossw .bar i');if(b){b.style.width=p+'%';const s=$('#bossw .bar span');if(s)s.textContent=p?'':'擊敗'}}
+function render(){timers.forEach(clearInterval);timers=[];closeRadio(true);closeCompass();
+ if(S.step!=='jungle'&&S.step!=='queen')audio.stop();
+ const sc=SCR[S.step]();const [an,bg]=AREA[S.step];
+ $('#app').style.setProperty('--bg',BG[bg]);$('#area').textContent=an;
+ $('#hearts').innerHTML=I('heart',12).repeat(10);
+ $('#buffs').innerHTML=S.honey&&idx(S.step)<idx('wof')?I('honey',24):'';
+ $('#bossw').innerHTML=sc.boss?`<div class="boss">${I(sc.boss[0],30)}<div class="bar"><i style="width:${sc.boss[2]}%"></i><span>${sc.boss[1]}</span></div></div>`:'';
+ const m=$('#main');m.className=sc.center?'center':'';m.innerHTML=sc.html;m.scrollTop=0;
+ renderTools();sc.mount&&sc.mount();}
+function renderTools(){const r=reached('bocdead'),mi=reached('chest'),glow=S.step==='hard';
+ $('#toolbar').innerHTML=`<button class="tool" data-a="compass">${I('compass',30)}<span>羅盤</span></button><button class="tool ${r?'':'off'}" data-a="radio">${I('radio',30)}<span>${r?'收音機':'？？？'}</span></button><button class="tool ${mi?'':'off'} ${glow?'glow':''}" data-a="mirror">${I('mirror',30)}<span>${mi?'魔鏡':'？？？'}</span></button>`}
+
+/* ---------- clicks ---------- */
+document.addEventListener('click',e=>{const el=e.target.closest('[data-a]');if(!el)return;const a=el.dataset.a;
+ if(a==='lens')lensAsk(+el.dataset.i);
+ if(a==='west'){if(el.dataset.v===CFG.goblinWest.a){S.wave=2;save();render()}else{$('#m_west').textContent='那裡沒有旗手。'}}
+ if(a==='tf'){truthSel[+el.dataset.i]=+el.dataset.v;render()}
+ if(a==='truthgo'){if(truthSel.includes(null)){toast('還有飛眼怪沒判斷。');return}
+   if(truthSel.join('')==='1010'){modal(`<div class="banner green">飛眼怪全滅！</div><div class="mid">${I('bocicon',60)}</div>${say('克蘇魯之腦開始受傷了。','c')}`,[{t:'繼續',f:()=>go('choose')}])}
+   else modal(`<div class="banner red">還有飛眼怪活著！</div>${say('判斷錯了。付給嚮導 1 銀。','c')}`,[{t:'再想想',cls:'dark'}])}
+ if(a==='brain'){const k=el.dataset.v;if(k==='C'){setBoss(0);setTimeout(()=>go('bocdead'),700)}else{S.brainsGone.push(k);save();modal(`<div class="banner red">你被混亂了！</div>${say(`${k} 是幻象。<br>付給嚮導 1 金。`,'c')}`,[{t:'好',cls:'dark',f:render}])}}
+ if(a==='enterJungle')audio.start().then(render);
+ if(a==='larva'){go('queen')}
+ if(a==='sock'){modal(ask('lever','這個座位是空的。要放什麼進去？','物品上的數字','放入'),[{t:'取消',cls:'dark'}]);FORMS.lever=v=>{if(norm(v)==='7319'){closeModal();S.wof.lev=1;save();render();toast(`${I('lever',24)} 放入拉桿 ×7`);return true}return '放不進去。'};setTimeout(()=>{const x=$('#f_lever');x&&x.focus()},100)}
+ if(a==='sw'){const i=+el.dataset.i;S.wof.sw[i]^=1;save();render()}
+ if(a==='fire')wofFire();
+ if(a==='boneReset'){bones=BONE0();picked=null;moved=false;$('#m_bone').textContent='';drawBones()}
+ if(a==='setspawn'){S.spawnSet=1;save();render()}
+ if(a==='radio'){if(!reached('bocdead'))return;closeCompass();openRadio()}
+ if(a==='compass'){closeRadio();openCompass()}
+ if(a==='mirror'){if(!reached('chest'))return;if(S.step==='hard'){$('#app').classList.add('flash');setTimeout(()=>{$('#app').classList.remove('flash');go('spawn')},500)}else toast(`${I('guide',20)} 嚮導：「還不是時候。」`)}
+});
+
+/* ---------- guide menu ---------- */
+$('#gbtn').onclick=()=>{modal(`<div class="row">${I('guide',36)}<div class="say">嚮導密碼</div></div><form data-form="pin" class="row"><input class="inp" id="f_pin" type="password" inputmode="numeric" maxlength="8" autocomplete="off" style="letter-spacing:8px"><button class="btn">進入</button></form><div class="msg red" id="m_pin"></div>`,[{t:'取消',cls:'dark'}]);setTimeout(()=>{const x=$('#f_pin');x&&x.focus()},100)};
+FORMS.pin=v=>{if(norm(v)===CFG.guidePin){guideMenu();return true}return '密碼不對。'};
+function guideMenu(){const i=idx(S.step);
+ modal(`<div class="row">${I('guide',36)}<div class="banner gold" style="text-align:left">嚮導選單</div></div><div class="say dim">目前：${LABEL[S.step]}</div>
+ <div class="grid3" style="grid-template-columns:repeat(2,minmax(0,1fr))">${TRIG.map(t=>`<button class="btn" data-g="${t[1]}">${t[0]}</button>`).join('')}</div>
+ <div class="grid3" style="grid-template-columns:repeat(2,minmax(0,1fr))"><button class="btn dark" data-g="__back" ${i===0?'disabled':''}>退回上一步</button><button class="btn red" data-g="__next" ${i===STEPS.length-1?'disabled':''}>跳到下一步</button></div>
+ <button class="btn dark wide" data-g="__reset" style="font-size:12px;min-height:36px">全部重來（測試用）</button>`,[{t:'關閉',cls:'dark'}]);
+ $('#mbox').querySelectorAll('[data-g]').forEach(b=>b.onclick=()=>{const g=b.dataset.g;
+  if(g==='circuit'){modal(`<div class="say gold">隱藏電路</div><div style="overflow:auto;max-height:60vh;background:#fff;border-radius:4px"><img src="assets/circuit.png" alt="血肉牆電路圖" style="width:200%;max-width:none;image-rendering:auto;display:block"></div><div class="small">可以左右上下拖曳看大圖。</div>`,[{t:'關閉',cls:'dark'}]);return}
+  if(g==='__reset'){modal(say('真的要全部重來嗎？進度會清空。','c'),[{t:'全部重來',cls:'red',f:()=>{S=FRESH();truthSel=[null,null,null,null];save();render()}},{t:'取消',cls:'dark'}]);return}
+  closeModal();
+  if(g==='__back'){prepStep(STEPS[i-1]);go(STEPS[i-1]);return}
+  if(g==='__next'){prepStep(STEPS[i+1]);go(STEPS[i+1]);return}
+  prepStep(g);go(g)})}
+function prepStep(s){if(s==='goblin'){S.goblinStart=Date.now();S.wave=0}if(s==='wof'){S.sacSeen=0}if(s==='skel'){S.skel={l:0,r:0};bones=BONE0();picked=null;moved=false}if(s==='lens'&&S.lenses.length===6){}if(s==='truth')truthSel=[null,null,null,null];if(s==='ending')S.spawnSet=0}
+
+/* ---------- jungle audio + radio ---------- */
+const audio={ctx:null,src:null,an:null,buf:null,on:false,
+ async build(){const sr=44100,dur=8;const oc=new OfflineAudioContext(1,sr*dur,sr);
+  const out=oc.createGain();out.gain.value=.9;out.connect(oc.destination);
+  [[228,.5,6.3],[241,.9,7.1],[219,1.6,5.4]].forEach(([f,ph,vr],k)=>{const o=oc.createOscillator();o.type='sawtooth';o.frequency.value=f;
+   const l=oc.createOscillator();l.frequency.value=vr;const lg=oc.createGain();lg.gain.value=9;l.connect(lg);lg.connect(o.frequency);
+   const lp=oc.createBiquadFilter();lp.type='lowpass';lp.frequency.value=2000;lp.Q.value=1.5;
+   const g=oc.createGain();g.gain.value=0;for(let t=0;t<dur;t+=0.05){g.gain.setValueAtTime(.035*(0.55+0.45*Math.sin(t*1.7+ph+k)),t)}
+   o.connect(lp);lp.connect(g);g.connect(out);o.start(0);l.start(0)});
+  try{await document.fonts.load('12px FP',CFG.larvaText)}catch(e){}
+  const chars=[...CFG.larvaText],cw=12,gap=3,n=chars.length;const cv=document.createElement('canvas');cv.width=n*(cw+gap);cv.height=12;
+  const cx=cv.getContext('2d');cx.fillStyle='#fff';cx.font='12px FP';cx.textBaseline='top';chars.forEach((ch,i)=>cx.fillText(ch,i*(cw+gap),0));
+  const px=cx.getImageData(0,0,cv.width,12).data;const cols=cv.width,rows=12;
+  const t0=.6,textDur=Math.min(6.6,n*.72),colDur=textDur/cols,fTop=8800,fBot=3600,band=(fTop-fBot)/rows;
+  for(let r=0;r<rows;r++){const g=oc.createGain();g.gain.value=0;g.connect(out);
+   for(let s=0;s<3;s++){const o=oc.createOscillator();o.frequency.value=fTop-(r+.2+s*.3)*band;o.connect(g);o.start(0)}
+   let prev=0;for(let c=0;c<=cols;c++){const on=c<cols&&px[(r*cols+c)*4+3]>110?1:0;if(on!==prev){const t=t0+c*colDur;g.gain.setValueAtTime(prev*.011,t);g.gain.linearRampToValueAtTime(on*.011,t+.006);prev=on}}}
+  this.buf=await oc.startRendering()},
+ async start(){try{if(!this.ctx)this.ctx=new (window.AudioContext||window.webkitAudioContext)();await this.ctx.resume();if(!this.buf)await this.build();
+   this.stop(true);const s=this.ctx.createBufferSource();s.buffer=this.buf;s.loop=true;const an=this.ctx.createAnalyser();an.fftSize=2048;an.smoothingTimeConstant=.15;an.minDecibels=-100;an.maxDecibels=-30;
+   s.connect(an);an.connect(this.ctx.destination);s.start();this.src=s;this.an=an;this.on=true}catch(e){this.on=true;toast('這台手機放不出聲音');}},
+ stop(keep){if(this.src){try{this.src.stop()}catch(e){}this.src=null}if(!keep)this.on=false}};
+let radioRAF=0,lastT=0;
+const PAL=(()=>{const p=[];for(let i=0;i<256;i++){const t=i/255;const r=Math.min(255,Math.round(255*Math.min(1,t*2.2)));const g=Math.round(255*Math.max(0,Math.min(1,(t-.38)*1.9)));const b=Math.round(255*(t<.35?t*1.6:Math.max(0,(.6-t)*1.4)+Math.max(0,(t-.85)*4)));p.push([r,g,Math.min(255,b)])}return p})();
+function openRadio(){$('#radio').classList.add('on');const cv=$('#spec'),cx=cv.getContext('2d');cx.fillStyle='#000';cx.fillRect(0,0,cv.width,cv.height);
+ const live=(S.step==='jungle'||S.step==='queen')&&audio.on&&audio.src&&audio.an;$('#radioNote').textContent=live?'能讓你看見聲音。':'能讓你看見聲音。（這裡只有雜訊）';
+ const H=cv.height,W=cv.width;let data=live?new Uint8Array(audio.an.frequencyBinCount):null;const binHz=live?audio.ctx.sampleRate/audio.an.fftSize:0;const fMax=11025;let acc=0;lastT=performance.now();
+ const col=cx.createImageData(1,H);
+ const frame=t=>{const dt=Math.min(.1,(t-lastT)/1000);lastT=t;acc+=dt*120;let steps=Math.floor(acc);acc-=steps;
+  if(steps>0){cx.drawImage(cv,-steps,0);
+   if(live)audio.an.getByteFrequencyData(data);
+   for(let y=0;y<H;y++){let v;if(live){const f=fMax*(1-y/H);v=data[Math.min(data.length-1,Math.round(f/binHz))]}else{v=Math.random()<.5?Math.random()*70:0}
+    const c=PAL[v|0];col.data[y*4]=c[0];col.data[y*4+1]=c[1];col.data[y*4+2]=c[2];col.data[y*4+3]=255}
+   for(let s=0;s<steps;s++)cx.putImageData(col,W-1-s,0)}
+  radioRAF=requestAnimationFrame(frame)};radioRAF=requestAnimationFrame(frame)}
+function closeRadio(silent){$('#radio').classList.remove('on');cancelAnimationFrame(radioRAF)}
+$('#radioClose').onclick=()=>closeRadio();
+
+/* ---------- compass ---------- */
+let heading=null,compassListening=false;
+const DIRS=['北','東北','東','東南','南','西南','西','西北'];
+function onOri(e){let h=null;if(typeof e.webkitCompassHeading==='number')h=e.webkitCompassHeading;else if(e.absolute&&e.alpha!=null)h=(360-e.alpha)%360;if(h==null)return;
+ const ang=(screen.orientation&&screen.orientation.angle)||window.orientation||0;heading=(h+ang+360)%360;drawDial()}
+function drawDial(){const cv=$('#dial');if(!cv)return;const c=cv.getContext('2d'),R=110,cx=120,cy=120;c.clearRect(0,0,240,240);c.imageSmoothingEnabled=false;
+ c.fillStyle='#0f1638';c.beginPath();c.arc(cx,cy,R+6,0,7);c.fill();c.strokeStyle='#ffd75a';c.lineWidth=6;c.beginPath();c.arc(cx,cy,R,0,7);c.stroke();
+ c.save();c.translate(cx,cy);c.rotate(-(heading||0)*Math.PI/180);
+ for(let i=0;i<72;i++){c.save();c.rotate(i*5*Math.PI/180);c.fillStyle=i%18===0?'#ffd75a':(i%2?'#3a4896':'#8a9cf0');c.fillRect(-2,-R+6,4,i%18===0?16:(i%2?6:10));c.restore()}
+ c.font='24px FP';c.textAlign='center';c.textBaseline='middle';
+ [['北',0,'#ff6a6a'],['東',90,'#fff'],['南',180,'#fff'],['西',270,'#fff']].forEach(([t,a,col])=>{c.save();c.rotate(a*Math.PI/180);c.translate(0,-R+38);c.rotate(-a*Math.PI/180+(heading||0)*Math.PI/180);c.fillStyle=col;c.fillText(t,0,0);c.restore()});
+ c.restore();
+ c.fillStyle='#ff6a6a';c.beginPath();c.moveTo(cx,cy-R+28);c.lineTo(cx-10,cy);c.lineTo(cx+10,cy);c.fill();c.fillStyle='#cfd8ff';c.beginPath();c.moveTo(cx,cy+R-28);c.lineTo(cx-10,cy);c.lineTo(cx+10,cy);c.fill();
+ c.fillStyle='#ffd75a';c.beginPath();c.arc(cx,cy,7,0,7);c.fill();
+ $('#heading').textContent=heading==null?'－':`手機上緣朝向：${DIRS[Math.round(heading/45)%8]}　${Math.round(heading)}°`}
+async function startCompass(){try{
+  if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){const r=await DeviceOrientationEvent.requestPermission();if(r!=='granted'){$('#compassNote').textContent='沒有拿到方向權限。重新整理後再按一次，跳出詢問時選「允許」。';return}}
+  if(!compassListening){if('ondeviceorientationabsolute' in window)window.addEventListener('deviceorientationabsolute',onOri);else window.addEventListener('deviceorientation',onOri);compassListening=true}
+  try{localStorage.setItem(KEY+'-compass','1')}catch(e){}
+  $('#compassStart').style.display='none';
+  setTimeout(()=>{if(heading==null)$('#compassNote').textContent='讀不到方向。這支手機可能沒有方向感應器，請改用手機內建的指南針。'},3000)
+ }catch(e){$('#compassNote').textContent='讀不到方向，請改用手機內建的指南針。'}}
+function openCompass(){$('#compass').classList.add('on');drawDial();
+ let auto=false;try{auto=localStorage.getItem(KEY+'-compass')==='1'}catch(e){}
+ const needsPerm=typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function';
+ if(compassListening){$('#compassStart').style.display='none'}else if(auto&&!needsPerm){startCompass()}else{$('#compassStart').style.display='block'}}
+function closeCompass(){$('#compass').classList.remove('on')}
+$('#compassClose').onclick=closeCompass;$('#compassStart').onclick=startCompass;
+
+/* ---------- go ---------- */
+document.fonts&&document.fonts.load('24px FP').finally(render);if(!document.fonts)render();
+</script>
+</body>
+</html>
