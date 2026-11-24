@@ -137,7 +137,7 @@ main.center{justify-content:center}
 <script>
 /* ============ 勘查後要改的地方都在這裡 ============ */
 const CFG = {
-  guidePin: '0000',                       // 嚮導密碼：改成你自己的 4 位數
+  guidePin: '0',                       // 嚮導密碼：改成你自己的 4 位數
   photos: [                               // 克眼 6 個拍攝點的檢查問題（勘查後填）
     {q:'照片 1：（勘查後填檢查問題）　示範答案：1', a:['1']},
     {q:'照片 2：（勘查後填檢查問題）　示範答案：2', a:['2']},
@@ -262,7 +262,7 @@ SCR.jungle=()=>({html:`<div class="stars">${[...Array(5)].map((_,i)=>`<img src="
 <div class="banner" style="color:#8fe36a;margin-top:6px">叢林</div>
 ${audio.on?`${say('嗡嗡嗡……<br>四周全是蜜蜂的聲音。','c')}<div style="flex:1"></div><div class="mid">${I('larva',56)}</div><button class="btn wide" data-a="larva">打破幼蟲</button>`:`${say('前面的草叢裡傳來奇怪的聲音。','c')}<div class="small c">（手機音量打開、關掉靜音）</div><div style="flex:1"></div><button class="btn wide gold" data-a="enterJungle">進入叢林</button>`}`});
 SCR.queen=()=>({boss:['qbicon','蜂王',70],html:`${banner('蜂王已經甦醒！','purple')}<div class="mid" style="height:170px">${I('qb',190,'','float')}</div>${say('幼蟲盒裡有一張蜂巢字盤。蜂王飛過的字，會告訴你她的寶藏在哪。','c')}${ask('honey','找到蜂王的寶藏了嗎？它的標籤上寫著什麼？')}`});
-FORMS.honey=v=>{if(anyOf(v,['瓶裝蜂蜜','bottledhoney'])){setBoss(0);S.honey=1;save();setTimeout(()=>reward('蜂王被打敗了！',['bag','honey'],'掉落：寶藏袋 #4<br>獲得增益：蜂蜜<br>跟嚮導拿寶藏袋 #4。',()=>go('rest')),700);return true}};
+FORMS.honey=v=>{const n=norm(v);if(anyOf(v,['瓶裝蜂蜜','蜂蜜','蜂蜜檸檬','檸檬蜂蜜','bottledhoney'])||(n.includes('蜂蜜')&&(n.includes('嚮導')||n.includes('檸檬')||n.includes('瓶')))){setBoss(0);S.honey=1;save();setTimeout(()=>reward('蜂王被打敗了！',['bag','honey'],'掉落：寶藏袋 #4<br>獲得增益：蜂蜜<br>跟嚮導拿寶藏袋 #4。',()=>go('rest')),700);return true}};
 SCR.rest=()=>({center:1,html:`${banner('休息一下','gold')}<div class="mid">${I('honey',60,'','float')}</div>${say('喝點蜂蜜，回復生命值。','c')}${wait('（休息完，跟著嚮導走）')}`});
 
 SCR.oldman=()=>({center:1,html:`<div class="mid">${I('oldman',90)}</div><div class="panel c" style="font-size:24px;line-height:1.4">老人：「我只在夜裡說話。」</div>${say('地牢入口前站著一個駝背的老人。','c dim')}${ask('curse','你想對老人說什麼？','輸入兩個字','說出口')}`});
