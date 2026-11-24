@@ -219,7 +219,7 @@ function lensAsk(i){if(S.lenses.includes(i)){toast(`照片 ${i+1}：${CFG.lensAr
 SCR.awake=()=>({boss:['eocicon','克蘇魯之眼',100],html:`${banner('克蘇魯之眼已經甦醒！','purple')}<div class="mid">${I('eoc',110,'','float')}</div>${say('牠一直盯著一張視力表。<br>跟嚮導拿視力表，走到牠在看的地方。','c')}
 <div class="row" style="justify-content:center;flex-wrap:wrap;gap:6px">${CFG.lensArrows.map((a,i)=>`<div class="slot got" style="height:56px;width:50px;font-size:12px">${I('lens',14)}<span style="font-size:24px">${a}</span></div>`).join('')}</div>${ask('end',CFG.eocEnd.q)}`});
 FORMS.end=v=>{if(anyOf(v,CFG.eocEnd.a)){go('mouth');return true}};
-SCR.mouth=()=>({boss:['eoc2icon','克蘇魯之眼',45],html:`${banner('眼睛裂開，變成了嘴！','red')}<div class="mid">${I('eocmouth',280,'border:3px solid #0f1638')}</div>${ask('teeth','給牠最後一擊！','4 位數','攻擊')}`});
+SCR.mouth=()=>({boss:['eoc2icon','克蘇魯之眼',45],html:`${banner('眼睛裂開，變成了嘴！','red')}<div class="mid">${I('eocmouth',280,'border:3px solid #0f1638')}</div>${ask('teeth','給牠最後一擊！','輸入答案','攻擊')}`});
 FORMS.teeth=v=>{if(perm(v,'3142')){setBoss(0);setTimeout(()=>go('eocdead'),700);return true}};
 SCR.eocdead=()=>({center:1,html:`${banner('克蘇魯之眼被打倒了！','green')}<div class="mid">${I('bag',72,'','float')}</div><div class="panel c"><div class="say">掉落：寶藏袋 #2</div></div>${say('跟嚮導拿寶藏袋 #2。','c')}${wait()}`});
 
@@ -436,7 +436,7 @@ function zoomer(){const v=$('#zv'),im=$('#zimg');if(!v)return;const pw=v.parentE
 
 /* ---------- music ---------- */
 const MUSIC_DIR='music/';
-const TRACK={intro:'Music-Overworld_Day',ready:'Music-Overworld_Day',slime:'Music-Slime_Rain',king:'Music-Slime_Rain',lens:'Music-Overworld_Day',awake:'Music-Overworld_Day',mouth:'Music-Overworld_Day',eocdead:'Music-Overworld_Day',goblin:'Music-Goblin_Army',gps:'Music-Overworld_Day',chest:'Music-Underground',truth:'Music-Underground_Crimson',choose:'Music-克腦',bocdead:'Music-Underground_Crimson',jungle:null,queen:'Music-Jungle',rest:'Music-Jungle',oldman:'Music-Dungeon',skel:'Music-Dungeon',head:'Music-Dungeon',skeldead:'Music-Dungeon',hell:'Music-Underworld',forge:'Music-Underworld',nights:'Music-Underworld',wof:'Music-肉牆',hard:'Music-Overworld_Day',spawn:'Music-Overworld_Day',ending:'Music-Overworld_Day'};
+const TRACK={intro:'Music-Overworld_Day',ready:'Music-Overworld_Day',slime:'Music-Slime_Rain',king:'Music-Slime_Rain',lens:'Music-Overworld_Day',awake:'Music-克眼',mouth:'Music-克眼',eocdead:'Music-Overworld_Day',goblin:'Music-Goblin_Army',gps:'Music-Overworld_Day',chest:'Music-Underground',truth:'Music-Underground_Crimson',choose:'Music-克腦',bocdead:'Music-Underground_Crimson',jungle:null,queen:'Music-Jungle',rest:'Music-Jungle',oldman:'Music-Dungeon',skel:'Music-Dungeon',head:'Music-Dungeon',skeldead:'Music-Dungeon',hell:'Music-Underworld',forge:'Music-Underworld',nights:'Music-Underworld',wof:'Music-肉牆',hard:'Music-Overworld_Day',spawn:'Music-Overworld_Day',ending:'Music-Overworld_Day'};
 const bgm={el:new Audio(),cur:null,unlocked:false,muted:false};
 bgm.el.loop=true;bgm.el.volume=.55;
 try{bgm.muted=localStorage.getItem(KEY+'-mute')==='1'}catch(e){}
